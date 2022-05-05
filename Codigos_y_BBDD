@@ -1,0 +1,230 @@
+
+#----------0. Preparando R para el an?lisis de Datos-----------------------------------------------
+
+# ---------------conociendo la estructura de los datos---------------------------------------------
+library(readxl)
+datos_coq <- read_excel("Universidad/Herramienta de Datos/Nueva carpeta/datos_coq.xlsx")
+View(datos_coq)
+
+head(datos_coq) # muestra las seis primeras filas de datos y los nombres de las columnas
+str(datos_coq)  # muestra la estructura del conjunto de datos
+tail(datos_coq) # mprimen una l?nea superior llamada 'encabezado', que contiene los nombres de las diferentes variables en su conjunto de datos
+
+
+
+
+#---------------Cargando librerias----------------------------------------------------------------
+
+library(readxl)
+#library(grDevices) # Equipos gr?ficos y soporte para la base y la red de gr?ficos
+library(tcltk)
+library(aplpack)
+library(corrplot)
+library(ggplot2)
+library(plotrix)
+library(rgl)
+library(tcltk2)
+library(GGally)
+library(tidyverse)
+library(treemap)
+library(dplyr)
+library(dplyr)
+
+Intalgraf<- read_excel("Universidad/Herramienta de Datos/Nueva carpeta/datos_coq.xlsx")
+#attach(RelavesCL) # carga la base en la memoria activa
+
+
+# CARACTERIZACION DEL CATASTRO DE RELAVES MINEROS DE cHILE 2020
+
+#----------1 DEPOSITOS DE RELAVES POR REGION ---------------------------------------------------------
+# 1.1- Determinacion de frecuencias absolutas y relativas de dep?sitos por region del pa?s
+
+sal.DatosReg=rbind(table(datos_coq$comuna),100*table(datos_coq$comuna)/length(datos_coq$comuna))
+# combina las dos frecuencias en una salida
+rownames(sal.DatosReg)=c("frec.absoluta","frec.porcentual") # asigna nombre a las filas de la salida
+colnames(sal.DatosReg)=c("Andacollo","Combarbala", "Coquimbo", "La Serena", "Los Vilos" , "Ovalle")
+# asigna nombre a las columnas de la salida
+round(sal.DatosReg,2) # redondea la salida a dos d?gitos decimales
+
+# 1.2- Gr?fico de barras todas del mismo color #####
+
+graf1=ggplot(datos_coq,aes(x=comuna))+geom_bar(fill="blue",alpha=0.8) #diagrama de barras b?sico
+graf1
+
+
+
+#----------2 ESTADO DE SITUACI?N DE LOS DEPOSITOS DE RELAVES POR REGION ---------------------------------------------------------
+
+# 2.1 Frecuencias absolutas de relaves por tipo de instalaci?n
+table(datos_coq$estado_seia) 
+p1b=ggplot(datos_coq,aes(x=estado_seia))+geom_bar(fill="blue",alpha=0.8) #diagrama de barras b?sico
+p1b
+
+# 2.2 tabla combinada de Frecuencias absolutas y relativas de relaves por tipo de instalaci?n
+
+sal.EstadoSEIA=rbind(table(datos_coq$estado_seia),100*table(datos_coq$estado_seia)/length(datos_coq$estado_seia))
+# combina las dos frecuencias en una salida
+rownames(sal.EstadoSEIA)=c("Frec.absoluta","Frec.porcentual") # asigna nombre a las filas de la salida
+colnames(sal.EstadoSEIA)=c("Aprobado","Desistido", "En Calificacion")
+# asigna nombre a las columnas de la salida
+round(sal.EstadoSEIA,2) # redondea la salida a dos d?gitos decimales
+
+#  2.3 Gr?fico de barras superpuestas de tipos de instalaci?n. Regi?n en el eje 
+graf2=ggplot(datos_coq,aes(x=comuna))+
+  geom_bar( aes(x=comuna,fill =estado_seia),position=position_dodge()) #barras adyacentes
+graf2
+
+#  2.4 tabla de distribuciones conjuntas  entre Proyecto comuna y estado de aprobaci�n (Tabla 2 del informe)
+
+table(datos_coq$comuna) 
+dist.conj=table(datos_coq$comuna, datos_coq$estado_seia) # devuelve la distribuci?n conjunta 
+Total=apply(dist.conj,2,sum) # calcula el total de cada columna
+sal.tabla=rbind(dist.conj,Total) # agrega una fila con los totales
+round(sal.tabla,2)
+
+write.csv(sal.tabla, file="Prueba1.csv") #Descarga datos en formato csv
+
+dist.porc=round(100*cbind(dist.conj[,1]/Total[1],dist.conj[,2]/Total[2],dist.conj[,3]/Total[3],4) # calcula la distribuci?n porcentual 
+
+colnames(dist.porc)<-c("Aprobado (%)","Desistido (%)", "En Calificacion (%)") # asigna nombre a las columnas de la distribuci?n porcentual
+sal.conj=cbind(dist.conj,dist.porc) # combina ambas distribuciones
+
+Totales=apply(sal.conj,2,sum) # calcula el total de cada columna
+sal.fin=rbind(sal.conj,Totales) # agrega una fila con los totales
+round(sal.fin,2)
+
+
+#-----------  3   An?lisis de dep?sitos seg?n tipo de instalaci?n (tecnolog?a)-------------------------------------  
+
+# 3.1 DETERMINANDO FRECUENCIAS RELATIVAS Y ABSOLUTAS de Energ�a segun TIPO DE INSTALACION
+
+sal.instalacion=rbind(table(datos_coq$tipo_tecnologia),100*table(datos_coq$tipo_tecnologia)/length(datos_coq$tipo_tecnologia))
+# combina las dos frecuencias en una salida
+rownames(sal.instalacion)=c("Frec.absoluta","Frec.porcentual") # asigna nombre a las filas de la salida
+colnames(sal.instalacion)=c("E�lica", "Solar Fotovoltaica" ,"Petroleo Diesel")
+# asigna nombre a las columnas de la salida
+round(sal.instalacion,2) # redondea la salida a dos d?gitos decimales
+write.csv(sal.instalacion, file="Fasdasdc.csv") #Descarga datos en formato csv
+
+
+# 3.2 graficando frecuencias absolutas a nivel pa?s por tipo de instalaci?n
+
+graf3=ggplot(datos_coq,aes(x=tipo_tecnologia))+geom_bar(fill="blue",alpha=0.8) #diagrama de barras b?sico
+graf3
+
+#  2.3 Gr?fico de barras superpuestas de tipos de instalaci?n enncada regi?n (Regi?n en el eje )
+graf4=ggplot(datos_coq,aes(x=comuna))+
+  geom_bar( aes(x=comuna,fill =tipo_tecnologia),position=position_dodge()) #barras adyacentes
+graf4
+
+# 3.3 graficando tipos de instalaci?n por cada regi?n 
+
+#####   barras superpuestas  de tipos de instalaciones de relaves por region en el eje x 
+#####   pero con las leyendas en la parte superior ####
+
+graf5=ggplot(RelavesCL,aes(x=Reg))+geom_bar(aes(fill=Tipoinst))+
+  coord_flip() +
+  theme(legend.position = "top")
+graf5
+# 3.4 graficando tipos de instalaci?n por cada regi?n 
+# tabla de distribuci?n conjunta para identificar presencia de nuevas tecnolog?as como filtrado y pretiles
+
+dist.conj=table(RelavesCL$Reg, RelavesCL$Tipoinst) # devuelve la distribuci?n conjunta 
+Total=apply(dist.conj,2,sum) # calcula el total de cada columna
+sal.tabla=rbind(dist.conj,Total) # agrega una fila con los totales
+round(sal.tabla,2)
+
+#--------------------4 Dep?sitos de Relaves por comuna  --------------------------------------------------------------------
+
+table(RelavesCL$Comuna) 
+dist.conj=table(RelavesCL$EstadoInst, RelavesCL$Comuna) # devuelve la distribuci?n conjunta 
+Total=apply(dist.conj,2,sum) # calcula el total de cada columna
+sal.tabla=rbind(dist.conj,Total) # agrega una fila con los totales
+round(sal.tabla,2)
+
+#GRAFICO PRUEBA 1
+ggplot(data = RelavesCL, aes(x = Comuna)) + 
+  geom_bar() + 
+  xlab("COMUNAS") + 
+  ylab("CANTIDAD DE DEP?SITOS DE RELAVES") + 
+  ggtitle("DEP?SITOS POR cOMUNA")
+
+#GRAFICO PRUEBA 2 (OK SE UTILIZA EN EL INFORME)
+ggplot(data = RelavesCL, aes(x = Comuna)) + 
+  geom_bar(color = 'darkslategray', fill = 'steelblue') + 
+  xlab("COMUNAS") + 
+  ylab("CANTIDAD DE DEPOSITOS DE RELAVES") + 
+  ggtitle("Gr?fico de Barras") +
+  coord_flip()
+
+#GRAFICO PRUEBA 3 (OK SE UTILIZA EN EL INFORME)
+ggplot(data = RelavesCL, aes(x = Reg)) + 
+  geom_bar(color = 'darkslategray', fill = 'steelblue') + 
+  xlab("Regiones") + 
+  ylab("Cantidad de depósitos de relaves") + 
+  ggtitle("N° de depósitos por región") +
+  coord_flip()
+#---------------------------------------------------------------------------
+VOLAc %>%
+  group_by(Reg) %>%
+  summarise(promedio = mean(VOLAc),
+            desvest = sd(VOLAc),
+            N = n())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#__________________________________________________________________________
+boxplotReLComuna=ggplot(RelavesCL,aes(y=VOLAc))+geom_boxplot(outlier.colour = "red")
+boxplotReLComuna+ylab("reg")
+
+boxplotprevalencia=ggplot(IPSXCOVID,aes(y=IPS2020))+geom_boxplot(outlier.colour = "red")
+boxplotprevalencia+ylab(" IPS 2020")
+boxplotprevalencia=ggplot(IPSXCOVID,aes(y=CASOSCOVID))+geom_boxplot(outlier.colour = "red")
+boxplotprevalencia+ylab(" Casos COVID19")
+boxplotprevalencia=ggplot(IPSXCOVID,aes(y=PREVALENCIA_MINCIENCIAS_COVID))+geom_boxplot(outlier.colour = "red")
+boxplotprevalencia+ylab(" Tasa de Prevalencia Casos Covid")
+boxplotprevalencia=ggplot(IPSXCOVID,aes(y=FALLECIDOS))+geom_boxplot(outlier.colour = "red")
+boxplotprevalencia+ylab(" Fallecidos")
+boxplotprevalencia=ggplot(IPSXCOVID,aes(y= PREVALENCIA_FALLECIDOS))+geom_boxplot(outlier.colour = "red")
+boxplotprevalencia+ylab(" Prevalencia Fallecidos")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#----------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------
+
+
+
